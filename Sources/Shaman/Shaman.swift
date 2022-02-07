@@ -69,7 +69,7 @@ private final class Wrapper {
         guard bufferPointer.count == SHA256.Digest.byteCount else {
             throw Error.incorrectSizeOfFixedMidstate(got: bufferPointer.count, butExpected: SHA256.Digest.byteCount)
         }
-        print("fixState to 🔮")
+        print("🔮Wrapper🔮 fixState:to => call `secp256k1_sha256_init_with_state`")
         secp256k1_sha256_init_with_state(&hasher, bufferPointer.baseAddress, bufferPointer.count)
     }
     
@@ -78,7 +78,6 @@ private final class Wrapper {
     /// - Returns: The digest of the inputted data
     @inlinable func finalize() -> SHA256.Digest {
         defer { initHasher() } // reset state, make ready to be reused.
-//        var out = Data(repeating: 0x00, count: SHA256.Digest.byteCount)
         var out = [UInt8](repeating: 0x00, count: SHA256.Digest.byteCount)
         secp256k1_sha256_finalize(&hasher, &out)
         
@@ -183,7 +182,7 @@ public extension SHA256 {
     }
     
     mutating func fixState(to bufferPointer: UnsafeRawBufferPointer) throws {
-        print("fixState to 🔮🔮")
+        print("🔮SHA256🔮 fixState:to => call WRAPPER 🎁")
         try wrapper.fixState(to: bufferPointer)
     }
     
@@ -192,23 +191,22 @@ public extension SHA256 {
         bufferPointer inputPointer: UnsafeRawBufferPointer,
         cacheStateIn pointerToCache: UnsafeMutableRawBufferPointer
     ) throws {
-        print("🔮SHA256🔮 update:bufferPointer:cacheStateIn => call wrapper")
+        print("🔮SHA256🔮 update:bufferPointer:cacheStateIn => call WRAPPER 🎁")
         try wrapper.update(bufferPointer: inputPointer, cacheStateIn: pointerToCache)
     }
     
-//    @inlinable
-//    mutating func fixState<D: DataProtocol>(to fixedMidState: D) throws {
-//        print("fixState to 🔮🔮🔮🔮")
-//        try fixedMidState.withContiguousStorageIfAvailable { body in
-//            try body.withUnsafeBytes { source in
-//                try self.fixState(to: source)
-//            }
-//        }
-//    }
+    @inlinable
+    mutating func fixState<D: DataProtocol>(to fixedMidStateDataProtocol: D) throws {
+        print("🔮SHA256🔮 fixState<D: DataProtocol>:to => call SELF 🔄")
+        let fixedMidStateData = Data(fixedMidStateDataProtocol)
+        try fixedMidStateData.withUnsafeBytes { source in
+            try self.fixState(to: source)
+        }
+    }
     
     @inlinable
     mutating func update<D: DataProtocol>(data: D, cacheStateIn pointerToCache: UnsafeMutableRawBufferPointer) throws {
-        print("🔮SHA256🔮 update<D: DataProtocol>:data:pointerToCache => call self")
+        print("🔮SHA256🔮 update<D: DataProtocol>:data:pointerToCache => call SELF 🔄")
         try data.withContiguousStorageIfAvailable { dataBody in
             try dataBody.withUnsafeBytes { dataPointer in
                 try self.update(bufferPointer: dataPointer, cacheStateIn: pointerToCache)

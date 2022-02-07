@@ -25,27 +25,17 @@ final class ShamanTests: XCTestCase {
         
     }
     
-    func testMidState() throws {
-        let tag = "BIP0340/nonce"
-        var hasher = SHA256()
-        let tagData = tag.data(using: .ascii)!
-        hasher.update(data: tagData)
-        let once = Data(hasher.finalize())
-        let inputForTwice = Data(once + once)
-        hasher.update(data: inputForTwice)
-        let twice = Data(hasher.finalize())
-        XCTAssertEqual(twice.hexString, "5301f1001a8be6253a3583927793565cef360de8bac2bdcbf37b195e699435a8")
-//        XCTAssertEqual(twice.hexString, "46615b35f4bfbff79f8dc67183627ab3602171805735866121a29e5468b07b4c")
-        
-    }
-    
     func testCacheMidState() throws {
-        var hasher = SHA256()
-//        try hasher.fixState(to: )
-        let midstate = try Data(hex: "46615b35f4bfbff79f8dc67183627ab3602171805735866121a29e5468b07b4c")
-        try midstate.withUnsafeBytes { midStatePointer in
-            try hasher.fixState(to: midStatePointer)
+        
+        /// Computes: SHA( SHA(tag) || SHA(tag))
+        func expected() -> Data {
+            let tag = "BIP0340/nonce"
+            let hashed = Data(SHA256.hash(data: tag.data(using: .utf8)!))
+            return Data(SHA256.hash(data: Data(hashed + hashed)))
         }
-        XCTAssertEqual("5301f1001a8be6253a3583927793565cef360de8bac2bdcbf37b195e699435a8", Data(hasher.finalize()).hexString)
+        
+        var hasher = SHA256()
+        try hasher.fixState(to: Data(hex: "46615b35f4bfbff79f8dc67183627ab3602171805735866121a29e5468b07b4c"))
+        XCTAssertEqual(expected(), Data(hasher.finalize()))
     }
 }

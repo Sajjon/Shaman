@@ -190,7 +190,6 @@ void secp256k1_sha256_finalize(secp256k1_sha256 *hash, void *out32) {
     secp256k1_sha256_finalize_unsigned_char_ptr(hash, (unsigned char *)out32);
 }
 
-
 /* Initializes SHA256 with fixed midstate. */
 static void secp256k1_sha256_init_with_state_unsigned_char_ptr(secp256k1_sha256 *sha, const unsigned char *data, size_t len) {
     
@@ -200,13 +199,11 @@ static void secp256k1_sha256_init_with_state_unsigned_char_ptr(secp256k1_sha256 
     
     secp256k1_sha256_initialize(sha);
     
-    int index;
-    int inner;
-    for(index = 0; index < 8; ++index) {
-        printf("✨ sha->s[%d]\n", index);
-        memcpy(&sha->s[index], (unsigned char *)(data + (index*4)), 4);
+    memcpy(sha->s, data, byte_count);
+
+    // Convert to big endian
+    for(int index = 0; index < 8; ++index) {
         sha->s[index] = BE32(sha->s[index]);
-        
     }
     
     sha->bytes = 64; // why 64 instead of 32? Well that is what Bitcoin core developers are using: https://github.com/bitcoin-core/secp256k1/blob/5324f8942dd322448fae6c9b225ecac2854fa7e2/src/modules/schnorrsig/main_impl.h#L27
