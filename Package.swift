@@ -20,22 +20,15 @@ let package = Package(
     dependencies: [
         // SHA256.Digest so our API is compatible with swift-crypto
         .package(url: "https://github.com/apple/swift-crypto.git", "2.0.0" ..< "3.0.0"),
-        
     ],
     targets: [
- 
-        .target(
-            name: "secp256k1",
-            sources: ["src"],
-            cSettings: [
-                .headerSearchPath("secp256k1/include")
-            ]
-        ),
+        .target(name: "BridgeToC", dependencies: []),
+       
         
         .target(
             name: "Shaman",
             dependencies: [
-                "secp256k1",
+                "BridgeToC",
                 // `SHA256.Digest`, `HashFunction`
                 .product(name: "Crypto", package: "swift-crypto"),
             ]),

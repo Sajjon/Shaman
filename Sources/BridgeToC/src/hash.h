@@ -17,12 +17,9 @@ typedef struct {
 } secp256k1_sha256;
 
 void secp256k1_sha256_initialize(secp256k1_sha256 *hash);
-
-void secp256k1_sha256_write(secp256k1_sha256 *hash, const unsigned char *data, size_t size);
-
-void secp256k1_sha256_finalize(secp256k1_sha256 *hash, unsigned char *out32);
-
-/* Initializes SHA256 with fixed midstate. */
-void secp256k1_sha256_initialize_with_fixed_midstate(secp256k1_sha256 *sha, const unsigned char *data, size_t size);
+void secp256k1_sha256_write(secp256k1_sha256 *hash, const void *data, size_t size);
+void secp256k1_sha256_write_cache_state(secp256k1_sha256 *hash, const void *data, size_t size, void *state32out);
+void secp256k1_sha256_finalize(secp256k1_sha256 *hash, void *out32);
+void secp256k1_sha256_init_with_state(secp256k1_sha256 *sha, const void *data, size_t len);
 
 #endif /* SECP256K1_HASH_H */

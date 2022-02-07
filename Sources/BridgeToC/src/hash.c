@@ -4,9 +4,6 @@
  * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
  ***********************************************************************/
 
-#ifndef SECP256K1_HASH_IMPL_H
-#define SECP256K1_HASH_IMPL_H
-
 #include "hash.h"
 #include "util.h"
 
@@ -45,6 +42,7 @@ void secp256k1_sha256_initialize(secp256k1_sha256 *hash) {
     hash->s[7] = 0x5be0cd19ul;
     hash->bytes = 0;
 }
+
 
 /** Perform one SHA-256 transformation, processing 16 big endian 32-bit words. */
 static void secp256k1_sha256_transform(uint32_t* s, const uint32_t* chunk) {
@@ -129,7 +127,8 @@ static void secp256k1_sha256_transform(uint32_t* s, const uint32_t* chunk) {
     s[7] += h;
 }
 
-void secp256k1_sha256_write(secp256k1_sha256 *hash, const unsigned char *data, size_t len) {
+
+static void secp256k1_sha256_write_unsigned_char_ptr_cacheable_state(secp256k1_sha256 *hash, const unsigned char *data, size_t len, unsigned char *state32out) {
     size_t bufsize = hash->bytes & 0x3F;
     hash->bytes += len;
     VERIFY_CHECK(hash->bytes >= len);
@@ -146,17 +145,40 @@ void secp256k1_sha256_write(secp256k1_sha256 *hash, const unsigned char *data, s
         /* Fill the buffer with what remains. */
         memcpy(((unsigned char*)hash->buf) + bufsize, data, len);
     }
+    
+    if (state32out) {
+        memcpy(state32out, hash->s, 32);
+        int index;
+        printf("\n🐬🐬🐬🐬🐬\n");
+        for(index = 0; index < 8; ++index) {
+            printf("%.2x", hash->s[index]);
+        }
+        printf("\n\b🐬🐬🐬🐬🐬\n");
+    }
+
 }
 
-void secp256k1_sha256_finalize(secp256k1_sha256 *hash, unsigned char *out32) {
+static void secp256k1_sha256_write_unsigned_char_ptr(secp256k1_sha256 *hash, const unsigned char *data, size_t size) {
+    secp256k1_sha256_write_unsigned_char_ptr_cacheable_state(hash, data, size, NULL);
+}
+
+void secp256k1_sha256_write(secp256k1_sha256 *hash, const void *data, size_t size) {
+    secp256k1_sha256_write_unsigned_char_ptr_cacheable_state(hash, (const unsigned char *)data, size, NULL);
+}
+
+void secp256k1_sha256_write_cache_state(secp256k1_sha256 *hash, const void *data, size_t size, void *state32out) {
+    secp256k1_sha256_write_unsigned_char_ptr_cacheable_state(hash, (const unsigned char *)data, size, (unsigned char *)state32out);
+}
+
+static void secp256k1_sha256_finalize_unsigned_char_ptr(secp256k1_sha256 *hash, unsigned char *out32) {
     static const unsigned char pad[64] = {0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t sizedesc[2];
     uint32_t out[8];
     int i = 0;
     sizedesc[0] = BE32(hash->bytes >> 29);
     sizedesc[1] = BE32(hash->bytes << 3);
-    secp256k1_sha256_write(hash, pad, 1 + ((119 - (hash->bytes % 64)) % 64));
-    secp256k1_sha256_write(hash, (const unsigned char*)sizedesc, 8);
+    secp256k1_sha256_write_unsigned_char_ptr(hash, pad, 1 + ((119 - (hash->bytes % 64)) % 64));
+    secp256k1_sha256_write_unsigned_char_ptr(hash, (const unsigned char*)sizedesc, 8);
     for (i = 0; i < 8; i++) {
         out[i] = BE32(hash->s[i]);
         hash->s[i] = 0;
@@ -164,39 +186,32 @@ void secp256k1_sha256_finalize(secp256k1_sha256 *hash, unsigned char *out32) {
     memcpy(out32, (const unsigned char*)out, 32);
 }
 
-void secp256k1_sha256_initialize_with_fixed_midstate(secp256k1_sha256 *sha, const unsigned char *data, size_t size) {
+void secp256k1_sha256_finalize(secp256k1_sha256 *hash, void *out32) {
+    secp256k1_sha256_finalize_unsigned_char_ptr(hash, (unsigned char *)out32);
+}
+
+
+/* Initializes SHA256 with fixed midstate. */
+static void secp256k1_sha256_init_with_state_unsigned_char_ptr(secp256k1_sha256 *sha, const unsigned char *data, size_t len) {
     
-    ARG_CHECK(data != NULL);
-    ARG_CHECK(size == 32);
+    VERIFY_CHECK(data != NULL);
+    size_t byte_count = 32;
+    VERIFY_CHECK(len == byte_count);
     
     secp256k1_sha256_initialize(sha);
-
-    memcpy(sha->s, data, size);
-
-    sha->bytes = 32;
+    
+    int index;
+    int inner;
+    for(index = 0; index < 8; ++index) {
+        printf("✨ sha->s[%d]\n", index);
+        memcpy(&sha->s[index], (unsigned char *)(data + (index*4)), 4);
+        sha->s[index] = BE32(sha->s[index]);
+        
+    }
+    
+    sha->bytes = 64; // why 64 instead of 32? Well that is what Bitcoin core developers are using: https://github.com/bitcoin-core/secp256k1/blob/5324f8942dd322448fae6c9b225ecac2854fa7e2/src/modules/schnorrsig/main_impl.h#L27
 }
 
-/* Initializes a sha256 struct and writes the 64 byte string
- * SHA256(tag)||SHA256(tag) into it. */
-static void secp256k1_sha256_initialize_tagged(secp256k1_sha256 *hash, const unsigned char *tag, size_t taglen) {
-    unsigned char buf[32];
-    secp256k1_sha256_initialize(hash);
-    secp256k1_sha256_write(hash, tag, taglen);
-    secp256k1_sha256_finalize(hash, buf);
-
-    secp256k1_sha256_initialize(hash);
-    secp256k1_sha256_write(hash, buf, 32);
-    secp256k1_sha256_write(hash, buf, 32);
+void secp256k1_sha256_init_with_state(secp256k1_sha256 *sha, const void *data, size_t len) {
+    secp256k1_sha256_init_with_state_unsigned_char_ptr(sha, (const unsigned char *)data, len);
 }
-
-
-#undef BE32
-#undef Round
-#undef sigma1
-#undef sigma0
-#undef Sigma1
-#undef Sigma0
-#undef Maj
-#undef Ch
-
-#endif /* SECP256K1_HASH_IMPL_H */
