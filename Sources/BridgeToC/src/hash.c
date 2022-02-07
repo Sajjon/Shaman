@@ -4,6 +4,10 @@
  * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
  ***********************************************************************/
 
+// Following have been made by Alexander Cyon:
+// * `secp256k1_sha256_write` may copy over internal state to provided output buffer
+// * `secp256k1_sha256_init_with_state` new method to init hasher with a precomputed state
+
 #include "hash.h"
 #include "util.h"
 
@@ -42,7 +46,6 @@ void secp256k1_sha256_initialize(secp256k1_sha256 *hash) {
     hash->s[7] = 0x5be0cd19ul;
     hash->bytes = 0;
 }
-
 
 /** Perform one SHA-256 transformation, processing 16 big endian 32-bit words. */
 static void secp256k1_sha256_transform(uint32_t* s, const uint32_t* chunk) {
@@ -147,13 +150,12 @@ static void secp256k1_sha256_write_unsigned_char_ptr_cacheable_state(secp256k1_s
     }
     
     if (state32out) {
-        memcpy(state32out, hash->s, 32);
-        int index;
-        printf("\n🐬🐬🐬🐬🐬\n");
-        for(index = 0; index < 8; ++index) {
-            printf("%.2x", hash->s[index]);
+        uint32_t out[8];
+        int i = 0;
+        for (i = 0; i < 8; i++) {
+            out[i] = BE32(hash->s[i]);
         }
-        printf("\n\b🐬🐬🐬🐬🐬\n");
+        memcpy(state32out, (const unsigned char*)out, 32);
     }
 
 }
