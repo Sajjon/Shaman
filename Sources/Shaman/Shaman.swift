@@ -41,7 +41,25 @@ public extension SHA256 {
         wrapper.restore(tag: tag)
     }
     
-    mutating func restore(state: Data, description: String? = nil) throws {
+    mutating func update(
+        bufferPointer inputPointer: UnsafeRawBufferPointer,
+        tag: String
+    ) -> Tag {
+        wrapper.update(
+            bufferPointer: inputPointer,
+            tag: tag
+        )
+    }
+}
+
+// MARK: - Tag Convenience
+// MARK: -
+public extension SHA256 {
+    
+    mutating func restore(
+        state: Data,
+        description: String? = nil
+    ) throws {
         let tag = try Tag(stateData: state, description: description)
         restore(tag: tag)
     }
@@ -53,12 +71,5 @@ public extension SHA256 {
         Data(bytes).withUnsafeBytes { dataPointer in
             update(bufferPointer: dataPointer, tag: tag)
         }
-    }
-    
-    mutating func update(
-        bufferPointer inputPointer: UnsafeRawBufferPointer,
-        tag: String
-    ) -> Tag {
-        wrapper.update(bufferPointer: inputPointer, tag: tag)
     }
 }

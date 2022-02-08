@@ -31,9 +31,11 @@ public extension ShamanDigest {
     static let byteCount = 32
     
     func withUnsafeBytes<R>(_ body: (UnsafeRawBufferPointer) throws -> R) rethrows -> R {
-        return try Swift.withUnsafeBytes(of: bytes) {
-            let boundsCheckedPtr = UnsafeRawBufferPointer(start: $0.baseAddress,
-                                                          count: Self.byteCount)
+        try Swift.withUnsafeBytes(of: bytes) {
+            let boundsCheckedPtr = UnsafeRawBufferPointer(
+                start: $0.baseAddress,
+                count: Self.byteCount
+            )
             return try body(boundsCheckedPtr)
         }
     }
@@ -68,7 +70,7 @@ public extension ShamanDigest {
 // MARK: -
 public extension ShamanDigest {
     var description: String {
-        "\("SHA256") digest: \(toArray().hexString)"
+        "SHA256 digest: \(toArray().hexString)"
     }
 }
 

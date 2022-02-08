@@ -16,6 +16,9 @@ internal final class Wrapper {
         self.hasher = secp256k1_sha256()
         initHasher()
     }
+}
+
+internal extension Wrapper {
     
     @inlinable
     func initHasher() {
