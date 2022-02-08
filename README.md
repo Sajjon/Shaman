@@ -31,4 +31,21 @@ SHA-256 implementations are usually very fast. You probably do not need to use _
 ## Example 
 One example of where it is very beneficial to be able to restore state if a hasher is is [Proof-of-Work (PoW)](https://en.wikipedia.org/wiki/Proof_of_work) work. 
 
-In PoW we might need to iterate hashing the same input data appended with some increasing [nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce) hundreds of thousands of times, or even millions of times or more. Since `hasher.update(data: input || nonce);` is the same as `hasher.update(data: input); hasher.update(data: nonce);` we can cache the result of `hasher.update(data: input);` and just calculate `hasher.update(data: nonce);` in very iteration increasing `nonce`. Since  [CryptoKit's `SHA256` hasher](https://developer.apple.com/documentation/cryptokit/sha256) does not offer this functionality (neither does [krzyzanowskim/CryptoSwift](https://github.com/krzyzanowskim/CryptoSwift/blob/main/Sources/CryptoSwift/SHA2.swift)), I decided to write this library.
+In PoW we might need to iterate hashing the same input data appended with some increasing [nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce) hundreds of thousands of times, or even millions of times or more. 
+
+Since:
+
+```swift
+hasher.update(data: input || nonce)
+``` 
+
+is the same as:
+
+```swift
+hasher.update(data: input)
+hasher.update(data: nonce)
+```
+
+we can cache the result of `hasher.update(data: input)` and just calculate `hasher.update(data: nonce)` in very iteration increasing `nonce`.
+
+Since  [CryptoKit's `SHA256` hasher](https://developer.apple.com/documentation/cryptokit/sha256) does not offer this functionality (neither does [krzyzanowskim/CryptoSwift](https://github.com/krzyzanowskim/CryptoSwift/blob/main/Sources/CryptoSwift/SHA2.swift)), I decided to write this library.
