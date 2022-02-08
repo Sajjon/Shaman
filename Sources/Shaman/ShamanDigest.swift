@@ -70,7 +70,7 @@ public extension ShamanDigest {
 // MARK: -
 public extension ShamanDigest {
     var description: String {
-        "SHA256 digest: \(toArray().hexString)"
+        "Shaman256 digest: \(toArray().hexString)"
     }
 }
 

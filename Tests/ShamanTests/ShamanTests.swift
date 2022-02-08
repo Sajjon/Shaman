@@ -8,7 +8,7 @@ final class ShamanTests: XCTestCase {
         @discardableResult
         func doTest(input: Data, expected: String) -> Data {
             // https://en.bitcoin.it/wiki/Test_Cases
-            let digest = SHA256.hash(data: input)
+            let digest = Shaman256.hash(data: input)
             let hash = Data(digest)
 
             XCTAssertEqual(
@@ -26,15 +26,15 @@ final class ShamanTests: XCTestCase {
     }
     
     func test_fixState_to() throws {
-        var hasher = SHA256()
+        var hasher = Shaman256()
         try hasher.restore(state: Data(hex: "46615b35f4bfbff79f8dc67183627ab3602171805735866121a29e5468b07b4c"))
         XCTAssertEqual(hashBIP340Tag(), Data(hasher.finalize()))
     }
     
     func test_update_cacheTo() {
-        var hasher = SHA256()
+        var hasher = Shaman256()
         
-        let half = Data(SHA256.hash(data: "BIP0340/nonce".data(using: .utf8)!))
+        let half = Data(Shaman256.hash(data: "BIP0340/nonce".data(using: .utf8)!))
         
         let tag = hasher.update(
             data: Data(half + half),
@@ -61,8 +61,8 @@ final class ShamanTests: XCTestCase {
         // https://www.di-mgt.com.au/sha_testvectors.html
         let expected = "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0"
        
-        var hasher = SHA256()
-        var lastTag: SHA256.Tag!
+        var hasher = Shaman256()
+        var lastTag: Shaman256.Tag!
         
         let input = String(repeating: "a", count: 1000).data(using: .utf8)!
         for _ in 0..<1000 {
@@ -81,8 +81,8 @@ final class ShamanTests: XCTestCase {
         let length = 1_000_000
         
         for bytesLeft in 1..<100 {
-            var referenceHasher = SHA256()
-            var hasherUnderTest = SHA256()
+            var referenceHasher = Shaman256()
+            var hasherUnderTest = Shaman256()
             
             let initialInput = String(repeating: "a", count: length - bytesLeft).data(using: .utf8)!
             let midStateTag = referenceHasher.update(data: initialInput, tag: "initial input")
@@ -97,6 +97,29 @@ final class ShamanTests: XCTestCase {
             XCTAssertEqual(Data(referenceHasher.finalize()).hexString, expected)
         }
     }
+    
+    
+    func test_short_input_tag() throws {
+        var hasher = Shaman256()
+        
+        let input = "short".data(using: .utf8)!
+        
+        let tag = hasher.update(
+            data: input,
+            tag: "short"
+        )
+        
+        hasher.update(data: " input".data(using: .utf8)!)
+        
+        // Soundness check...
+        XCTAssertEqual(Data(hasher.finalize()).hexString, Data(Shaman256.hash(data: "short input".data(using: .utf8)!)).hexString)
+        
+        // Actual check
+        var otherHasher = Shaman256()
+        otherHasher.restore(tag: tag)
+        otherHasher.update(data: " input".data(using: .utf8)!)
+        XCTAssertEqual(Data(otherHasher.finalize()).hexString, Data(Shaman256.hash(data: "short input".data(using: .utf8)!)).hexString)
+    }
 }
 
 private let bip340Tag = "BIP0340/nonce"
@@ -109,7 +132,7 @@ private extension ShamanTests {
     
     /// Computes: SHA( SHA(tag) || SHA(tag))
     func nestedHash(tag: String) -> Data {
-        let hashed = Data(SHA256.hash(data: tag.data(using: .utf8)!))
-        return Data(SHA256.hash(data: Data(hashed + hashed)))
+        let hashed = Data(Shaman256.hash(data: tag.data(using: .utf8)!))
+        return Data(Shaman256.hash(data: Data(hashed + hashed)))
     }
 }

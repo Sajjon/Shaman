@@ -192,7 +192,7 @@ void secp256k1_sha256_finalize(secp256k1_sha256 *hash, void *out32) {
     secp256k1_sha256_finalize_unsigned_char_ptr(hash, (unsigned char *)out32);
 }
 
-/* Initializes SHA256 with fixed midstate. */
+/* Initializes Shaman256 with fixed midstate. */
 static void secp256k1_sha256_init_with_state_unsigned_char_ptr(secp256k1_sha256 *sha, const unsigned char *data, size_t len) {
     
     VERIFY_CHECK(data != NULL);

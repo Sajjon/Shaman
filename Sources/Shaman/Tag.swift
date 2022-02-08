@@ -8,7 +8,7 @@
 import Foundation
 import BridgeToC
 
-public extension SHA256 {
+public extension Shaman256 {
     struct Tag: Equatable, CustomStringConvertible {
         
         internal var cachedState: secp256k1_sha256
@@ -24,9 +24,25 @@ public extension SHA256 {
     }
 }
 
-// MARK: - Convenience Init
-// MARK: - 
-internal extension SHA256.Tag {
+// MARK: - CustomStringConvertible
+// MARK: -
+public extension Shaman256.Tag {
+    var description: String {
+        "\(name) - state: \(inspectInnerState(of: cachedState))"
+    }
+}
+
+// MARK: - Equatable
+// MARK: -
+public extension Shaman256.Tag {
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.cachedState == rhs.cachedState
+    }
+}
+
+// MARK: - Testing
+// MARK: -
+internal extension Shaman256.Tag {
     init(stateData: Data, description: String? = nil) throws {
         guard stateData.count == 32 else {
             throw Error.incorrectSizeOfFixedMidstate(got: stateData.count, butExpected: 32)
@@ -36,21 +52,5 @@ internal extension SHA256.Tag {
             secp256k1_sha256_init_with_state(&hasher, dataPointer.baseAddress, stateData.count)
         }
         self.init(cachedState: hasher, name: description ?? "fixed midstate")
-    }
-}
-
-// MARK: - CustomStringConvertible
-// MARK: -
-public extension SHA256.Tag {
-    var description: String {
-        "\(name) - state: \(inspectInnerState(of: cachedState))"
-    }
-}
-
-// MARK: - Equatable
-// MARK: -
-public extension SHA256.Tag {
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.cachedState == rhs.cachedState
     }
 }

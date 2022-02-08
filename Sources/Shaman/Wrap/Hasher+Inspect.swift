@@ -18,10 +18,10 @@ func inspectInnerState(of hasher: secp256k1_sha256) -> Data {
     
 }
 
-func inspectStateOf(hasher: SHA256) -> Data {
+func inspectStateOf(hasher: Shaman256) -> Data {
     inspectInnerState(of: hasher.wrapper.hasher)
 }
 
-func inspectStateOf(tag: SHA256.Tag) -> Data {
+func inspectStateOf(tag: Shaman256.Tag) -> Data {
     inspectInnerState(of: tag.cachedState)
 }

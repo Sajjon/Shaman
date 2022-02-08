@@ -3,9 +3,9 @@ import Foundation
 import protocol Crypto.HashFunction
 import BridgeToC
 
-// MARK: - SHA256
+// MARK: - Shaman256
 // MARK: -
-public struct SHA256: Crypto.HashFunction {
+public struct Shaman256: Crypto.HashFunction {
     
     internal let wrapper: Wrapper
 
@@ -16,7 +16,7 @@ public struct SHA256: Crypto.HashFunction {
 
 // MARK: - HashFunction
 // MARK: -
-public extension SHA256 {
+public extension Shaman256 {
     typealias Digest = ShamanDigest
     static var blockByteCount = 64
     static let byteCount = 32
@@ -36,7 +36,7 @@ public extension SHA256 {
 
 // MARK: - Tag
 // MARK: -
-public extension SHA256 {
+public extension Shaman256 {
     mutating func restore(tag: Tag) {
         wrapper.restore(tag: tag)
     }
@@ -54,15 +54,7 @@ public extension SHA256 {
 
 // MARK: - Tag Convenience
 // MARK: -
-public extension SHA256 {
-    
-    mutating func restore(
-        state: Data,
-        description: String? = nil
-    ) throws {
-        let tag = try Tag(stateData: state, description: description)
-        restore(tag: tag)
-    }
+public extension Shaman256 {
     
     mutating func update<D: DataProtocol>(
         data bytes: D,
@@ -73,3 +65,18 @@ public extension SHA256 {
         }
     }
 }
+
+// MARK: - Tag Testing
+// MARK: -
+internal extension Shaman256 {
+    
+    mutating func restore(
+        state: Data,
+        description: String? = nil
+    ) throws {
+        let tag = try Tag(stateData: state, description: description)
+        restore(tag: tag)
+    }
+}
+
+
