@@ -46,6 +46,6 @@ hasher.update(data: input)
 hasher.update(data: nonce)
 ```
 
-we can cache the result of `hasher.update(data: input)` and just calculate `hasher.update(data: nonce)` in very iteration increasing `nonce`.
+we can cache the result of `hasher.update(data: input)` and just calculate `hasher.update(data: nonce)` in very iteration increasing `nonce`, **which requires restoring the internal state of the hasher to the state produced by `hasher.update(data: input)` in between iterations**.
 
 Since  [CryptoKit's `SHA256` hasher](https://developer.apple.com/documentation/cryptokit/sha256) does not offer this functionality (neither does [krzyzanowskim/CryptoSwift](https://github.com/krzyzanowskim/CryptoSwift/blob/main/Sources/CryptoSwift/SHA2.swift)), I decided to write this library.
