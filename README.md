@@ -7,12 +7,14 @@ The _Shaman256_ hasher conforms to [CryptoKit's HashFunction](https://developer.
 
 ```swift
 var hasher = Shaman256()
+
+// Tag (cache) some important state
 let tag = hasher.update(data: "some input".data(using: .utf8)!, tag: "state I wanna cache") // returned type: `Shaman256.Tag`
 
-// Later wrote changed hasher to some bad state
+// Later: Change hasher to some "bad" state
 hasher.update(data: "input resulting in unwanted state".data(using: .utf8)!)
 
-// Later we want to restore the internal state of the hasher
+// Later: Restore the internal state of the hasher
 hasher.restore(tag: tag)
 
 assert(hasher.finalize() == Shaman256.hash(data: "some input".data(using: .utf8)!) // true
