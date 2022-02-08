@@ -1,55 +1,14 @@
 import Foundation
 
-import protocol Crypto.Digest
 import protocol Crypto.HashFunction
-import struct Crypto.SHA256Digest
 
 import BridgeToC
-
-
-protocol DigestPrivate: Digest {
-    init?(bufferPointer: UnsafeRawBufferPointer)
-}
-
-extension DigestPrivate {
-    @inlinable
-    init?(bytes: [UInt8]) {
-        let some = bytes.withUnsafeBytes { bufferPointer in
-            return Self(bufferPointer: bufferPointer)
-        }
-
-        if some != nil {
-            self = some!
-        } else {
-            return nil
-        }
-    }
-}
-
-public enum Error: Swift.Error, Equatable {
-    case incorrectSizeOfFixedMidstate(got: Int, butExpected: Int)
-}
-
-func byteArray<T>(from value: T) -> [UInt8] where T: FixedWidthInteger {
-    withUnsafeBytes(of: value.bigEndian, Array.init)
-}
-
-extension Array {
-    func chunked(into size: Int) -> [[Element]] {
-        return stride(from: 0, to: count, by: size).map {
-            Array(self[$0 ..< Swift.min($0 + size, count)])
-        }
-    }
-}
 
 private func inspectInnerState(of hasher: secp256k1_sha256) -> Data {
     var state = hasher.s
     return Data(withUnsafeBytes(of: &state) { statePointer in
         [UInt8](statePointer).chunked(into: 4)
-            .map ({
-                print("🔮 \($0.hexString)")
-                return $0.reversed()
-            })
+            .map ({ $0.reversed() })
             .reduce([UInt8](), +)
     })
     
@@ -194,65 +153,6 @@ private final class Wrapper {
         
     }
 }
-
-public struct ShamanDigest: Crypto.Digest, DigestPrivate {
-    public static func == (lhs: Self, rhs: Self) -> Bool {
-        return safeCompare(lhs, rhs)
-    }
-    
-    public static func == <D: DataProtocol>(lhs: Self, rhs: D) -> Bool {
-        if rhs.regions.count != 1 {
-            let rhsContiguous = Data(rhs)
-            return safeCompare(lhs, rhsContiguous)
-        } else {
-            return safeCompare(lhs, rhs.regions.first!)
-        }
-    }
-
-    
-    public static var byteCount: Int = 32
-    internal typealias State = (UInt64, UInt64, UInt64, UInt64)
-    let bytes: State
-    
-    init?(bufferPointer: UnsafeRawBufferPointer) {
-        guard bufferPointer.count == Self.byteCount else {
-            return nil
-        }
-
-        var bytes = (UInt64(0), UInt64(0), UInt64(0), UInt64(0))
-        withUnsafeMutableBytes(of: &bytes) { targetPtr in
-            targetPtr.copyMemory(from: bufferPointer)
-        }
-        self.bytes = bytes
-    }
-    
-    public func withUnsafeBytes<R>(_ body: (UnsafeRawBufferPointer) throws -> R) rethrows -> R {
-        return try Swift.withUnsafeBytes(of: bytes) {
-            let boundsCheckedPtr = UnsafeRawBufferPointer(start: $0.baseAddress,
-                                                          count: Self.byteCount)
-            return try body(boundsCheckedPtr)
-        }
-    }
-
-    private func toArray() -> ArraySlice<UInt8> {
-        var array = [UInt8]()
-        array.appendByte(bytes.0)
-        array.appendByte(bytes.1)
-        array.appendByte(bytes.2)
-        array.appendByte(bytes.3)
-        return array.prefix(upTo: SHA256Digest.byteCount)
-
-    }
-    
-    public var description: String {
-        return "\("SHA256") digest: \(toArray().hexString)"
-    }
-    
-    public func hash(into hasher: inout Hasher) {
-        self.withUnsafeBytes { hasher.combine(bytes: $0) }
-    }
-}
-
 public struct SHA256: Crypto.HashFunction {
     
     fileprivate let wrapper: Wrapper
@@ -307,8 +207,4 @@ public extension SHA256 {
     }
     
    
-}
-
-internal func safeCompare<LHS: ContiguousBytes, RHS: ContiguousBytes>(_ lhs: LHS, _ rhs: RHS) -> Bool {
-    return openSSLSafeCompare(lhs, rhs)
 }
