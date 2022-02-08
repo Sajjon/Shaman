@@ -178,7 +178,6 @@ void secp256k1_copy_hasher_state(secp256k1_sha256 *target, secp256k1_sha256 *sou
     memcpy(target->buf, source->buf, sizeof(source->buf));
 }
 
-
 static void secp256k1_sha256_finalize_unsigned_char_ptr(secp256k1_sha256 *hash, unsigned char *out32) {
     static const unsigned char pad[64] = {0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t sizedesc[2];
