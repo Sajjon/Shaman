@@ -29,8 +29,6 @@ assert(hasher.finalize() == Shaman256.hash(data: "some input".data(using: .utf8)
 SHA-256 implementations are usually very fast. You probably do not need to use _Shaman_, you should prefer using [CryptoKit's `SHA256` hasher](https://developer.apple.com/documentation/cryptokit/sha256). However, under some rare circumstances you might benefit from being able to restore a SHA256's internal state.
 
 ## Example 
-One example of where it is very beneficial to be able to restore state if a hasher is is Proof-of-Work (PoW) work. 
+One example of where it is very beneficial to be able to restore state if a hasher is is [Proof-of-Work (PoW)](https://en.wikipedia.org/wiki/Proof_of_work) work. 
 
-In PoW we might need to iterate hashing the same input data hundreds of thousands of times, or even millions of times.
-
-Even though one run of SHA256 of that fixed input data is fast, it is wasteful to compute it many many times over. Here is where Shaman shines!
+In PoW we might need to iterate hashing the same input data appended with some increasing [nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce) hundreds of thousands of times, or even millions of times or more. Since `hasher.update(data: input || nonce);` is the same as `hasher.update(data: input); hasher.update(data: nonce);` we can cache the result of `hasher.update(data: input);` and just calculate `hasher.update(data: nonce);` in very iteration increasing `nonce`. Since  [CryptoKit's `SHA256` hasher](https://developer.apple.com/documentation/cryptokit/sha256) does not offer this functionality (neither does [krzyzanowskim/CryptoSwift](https://github.com/krzyzanowskim/CryptoSwift/blob/main/Sources/CryptoSwift/SHA2.swift)), I decided to write this library.
