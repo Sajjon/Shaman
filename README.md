@@ -1,7 +1,9 @@
 # Shaman 🧙🏾
-_Shaman_ is Swift wrapper around the [SHA-256 implementation in libsecp256k1 (bitcoin-core/secp256k1)](https://github.com/bitcoin-core/secp256k1) with feature of initializing a SHA256 hasher with some precomputed midstate. The actual hasher is named _Shaman256_ in order to avoid name conflict with swift-crypto / CryptoKit's _SHA256_ hasher.
+_Shaman_ is Swift wrapper around the [SHA-256 implementation in libsecp256k1 (bitcoin-core/secp256k1)](https://github.com/bitcoin-core/secp256k1) with feature of initializing a SHA256 hasher with some precomputed midstate. 
 
-The _Shaman256_ hasher conforms to [CryptoKit's HashFunction](https://developer.apple.com/documentation/cryptokit/hashfunction) and produces digests of type [Shaman256.Digest], which conforms to swift-crypto / CryptoKit's [`Digest`](https://developer.apple.com/documentation/cryptokit/digest) protocol.
+The hasher type is named _Shaman256_ in order to avoid name conflict with [CryptoKit's `SHA256` hasher](https://developer.apple.com/documentation/cryptokit/sha256).
+
+The _Shaman256_ hasher conforms to [CryptoKit's HashFunction](https://developer.apple.com/documentation/cryptokit/hashfunction) and produces digests of type _Shaman256.Digest_, which conforms to [CryptoKit's `Digest`](https://developer.apple.com/documentation/cryptokit/digest) protocol.
 
 ## Usage
 
