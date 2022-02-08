@@ -5,7 +5,7 @@ import BridgeToC
 
 // MARK: - Shaman256
 // MARK: -
-public struct Shaman256: Crypto.HashFunction {
+public struct Shaman256: CacheableHasher & HashFunction {
     
     internal let wrapper: Wrapper
 
@@ -34,37 +34,18 @@ public extension Shaman256 {
     
 }
 
-// MARK: - Tag
+// MARK: - CacheableHasher
 // MARK: -
 public extension Shaman256 {
-    mutating func restore(tag: Tag) {
-        wrapper.restore(tag: tag)
+    mutating func restore(cachedState: CachedState) {
+        wrapper.restore(cachedState: cachedState)
     }
     
-    mutating func update(
-        bufferPointer inputPointer: UnsafeRawBufferPointer,
-        tag: String
-    ) -> Tag {
-        wrapper.update(
-            bufferPointer: inputPointer,
-            tag: tag
-        )
+    mutating func updateAndCacheState(input: UnsafeRawBufferPointer, stateDescription: String?) -> CachedState {
+        wrapper.updateAndCacheState(input: input, stateDescription: stateDescription)
     }
 }
 
-// MARK: - Tag Convenience
-// MARK: -
-public extension Shaman256 {
-    
-    mutating func update<D: DataProtocol>(
-        data bytes: D,
-        tag: String
-    ) -> Tag {
-        Data(bytes).withUnsafeBytes { dataPointer in
-            update(bufferPointer: dataPointer, tag: tag)
-        }
-    }
-}
 
 // MARK: - Tag Testing
 // MARK: -
@@ -74,9 +55,7 @@ internal extension Shaman256 {
         state: Data,
         description: String? = nil
     ) throws {
-        let tag = try Tag(stateData: state, description: description)
-        restore(tag: tag)
+        let cachedState = try Shaman256.CachedState.init(stateData: state, description: description)
+        restore(cachedState: cachedState)
     }
 }
-
-

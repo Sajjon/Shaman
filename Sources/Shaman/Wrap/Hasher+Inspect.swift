@@ -22,6 +22,6 @@ func inspectStateOf(hasher: Shaman256) -> Data {
     inspectInnerState(of: hasher.wrapper.hasher)
 }
 
-func inspectStateOf(tag: Shaman256.Tag) -> Data {
-    inspectInnerState(of: tag.cachedState)
+func inspectStateOf(cachedState: Shaman256.CachedState) -> Data {
+    inspectInnerState(of: cachedState.wrappedHasher)
 }

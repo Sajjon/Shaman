@@ -9,40 +9,42 @@ import Foundation
 import BridgeToC
 
 public extension Shaman256 {
-    struct Tag: Equatable, CustomStringConvertible {
+    struct CachedState: CachedHasherState {
         
-        internal var cachedState: secp256k1_sha256
-        public let name: String
+        internal var wrappedHasher: secp256k1_sha256
+        public let stateDescription: String?
         
         internal init(
             cachedState: secp256k1_sha256,
-            name: String
+            description stateDescription: String?
         ) {
-            self.cachedState = cachedState
-            self.name = name
+            self.wrappedHasher = cachedState
+            self.stateDescription = stateDescription
         }
     }
 }
 
 // MARK: - CustomStringConvertible
 // MARK: -
-public extension Shaman256.Tag {
+public extension Shaman256.CachedState {
     var description: String {
-        "\(name) - state: \(inspectInnerState(of: cachedState))"
+        let tag = stateDescription.map { "\($0) - " } ?? ""
+        let state = "state: \(inspectInnerState(of: wrappedHasher))"
+        return [tag, state].joined(separator: "")
     }
 }
 
 // MARK: - Equatable
 // MARK: -
-public extension Shaman256.Tag {
+public extension Shaman256.CachedState {
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.cachedState == rhs.cachedState
+        lhs.wrappedHasher == rhs.wrappedHasher
     }
 }
 
 // MARK: - Testing
 // MARK: -
-internal extension Shaman256.Tag {
+internal extension Shaman256.CachedState {
     init(stateData: Data, description: String? = nil) throws {
         guard stateData.count == 32 else {
             throw Error.incorrectSizeOfFixedMidstate(got: stateData.count, butExpected: 32)
@@ -51,6 +53,6 @@ internal extension Shaman256.Tag {
         stateData.withUnsafeBytes { (dataPointer: UnsafeRawBufferPointer) -> Void in
             secp256k1_sha256_init_with_state(&hasher, dataPointer.baseAddress, stateData.count)
         }
-        self.init(cachedState: hasher, name: description ?? "fixed midstate")
+        self.init(cachedState: hasher, description: description)
     }
 }

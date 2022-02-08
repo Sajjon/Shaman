@@ -25,59 +25,61 @@ final class ShamanTests: XCTestCase {
         
     }
     
-    func test_fixState_to() throws {
+    func testRestoreToKnownPrecomputedState() throws {
         var hasher = Shaman256()
-        try hasher.restore(state: Data(hex: "46615b35f4bfbff79f8dc67183627ab3602171805735866121a29e5468b07b4c"))
+        try hasher.restore(state: Data(hex: bip340TagPrecomputedState))
         XCTAssertEqual(hashBIP340Tag(), Data(hasher.finalize()))
     }
     
-    func test_update_cacheTo() {
+    func testAssertContentsOfCachedStateByInspectingIt() {
         var hasher = Shaman256()
         
-        let half = Data(Shaman256.hash(data: "BIP0340/nonce".data(using: .utf8)!))
+        let half = Data(Shaman256.hash(data: bip340Tag.data(using: .utf8)!))
         
-        let tag = hasher.update(
+        let stateDescription = "some important description we wanna assert against later"
+        
+        let cachedState = hasher.updateAndCacheState(
             data: Data(half + half),
-            tag: "some description"
+            stateDescription: stateDescription
         )
         
-        XCTAssertEqual(inspectStateOf(tag: tag).hexString, inspectStateOf(hasher: hasher).hexString)
-        let expectedMidstate = "46615b35f4bfbff79f8dc67183627ab3602171805735866121a29e5468b07b4c"
-        XCTAssertEqual(inspectStateOf(tag: tag).hexString, expectedMidstate)
+        XCTAssertEqual(cachedState.stateDescription, stateDescription)
         
+        XCTAssertEqual(inspectStateOf(cachedState: cachedState).hexString, inspectStateOf(hasher: hasher).hexString)
+        
+        XCTAssertEqual(inspectStateOf(cachedState: cachedState).hexString, bip340TagPrecomputedState)
+
         let nonSenseInput = "non-sense data that must be 64 chars or longer, the purpose of which is to change the internal state of hasher"
         XCTAssertGreaterThanOrEqual(nonSenseInput.count, 64) // must be GEQ than 64 because the hasher has an internal buffer with size 64.
         hasher.update(data: nonSenseInput.data(using: .utf8)!)
-        XCTAssertNotEqual(inspectStateOf(hasher: hasher).hexString, expectedMidstate)
-        
+        XCTAssertNotEqual(inspectStateOf(hasher: hasher).hexString, bip340TagPrecomputedState)
+
         // Restore
-        hasher.restore(tag: tag)
-        XCTAssertEqual(inspectStateOf(tag: tag).hexString, expectedMidstate)
-        
+        hasher.restore(cachedState: cachedState)
+        XCTAssertEqual(inspectStateOf(cachedState: cachedState).hexString, bip340TagPrecomputedState)
+
         XCTAssertEqual(hashBIP340Tag().hexString, Data(hasher.finalize()).hexString)
     }
-    
-    func test_assert_that_caching_state_does_not_break_things() {
+
+    func testAssertCachingStateDoesNotHaveSideEffectOnDigests() {
         // https://www.di-mgt.com.au/sha_testvectors.html
-        let expected = "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0"
        
         var hasher = Shaman256()
-        var lastTag: Shaman256.Tag!
+        var lastState: Shaman256.CachedState?
         
         let input = String(repeating: "a", count: 1000).data(using: .utf8)!
         for _ in 0..<1000 {
-            let tag = hasher.update(data: input, tag: "irrelevant tag")
-            XCTAssertNotEqual(tag, lastTag)
-            lastTag = tag
+            let cachedState = hasher.updateAndCacheState(data: input)
+            XCTAssertNotEqual(cachedState, lastState)
+            lastState = cachedState
         }
         
-        XCTAssertEqual(Data(hasher.finalize()).hexString, expected)
+        XCTAssertEqual(Data(hasher.finalize()).hexString, oneMillionADigest)
         
     }
-    
-    func test_assert_cache_state_various_padding() throws {
+   
+    func testAssertCachedStateWithInputOfVariousLength() throws {
         // https://www.di-mgt.com.au/sha_testvectors.html
-        let expected = "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0"
         let length = 1_000_000
         
         for bytesLeft in 1..<100 {
@@ -85,28 +87,26 @@ final class ShamanTests: XCTestCase {
             var hasherUnderTest = Shaman256()
             
             let initialInput = String(repeating: "a", count: length - bytesLeft).data(using: .utf8)!
-            let midStateTag = referenceHasher.update(data: initialInput, tag: "initial input")
+            let cachedMidState = referenceHasher.updateAndCacheState(data: initialInput)
             let remainingInput = String(repeating: "a", count: bytesLeft).data(using: .utf8)!
             
             XCTAssertEqual(initialInput.count + remainingInput.count, length)
             
-            hasherUnderTest.restore(tag: midStateTag)
+            hasherUnderTest.restore(cachedState: cachedMidState)
             hasherUnderTest.update(data: remainingInput)
-            XCTAssertEqual(Data(hasherUnderTest.finalize()).hexString, expected)
+            XCTAssertEqual(Data(hasherUnderTest.finalize()).hexString, oneMillionADigest)
             referenceHasher.update(data: remainingInput)
-            XCTAssertEqual(Data(referenceHasher.finalize()).hexString, expected)
+            XCTAssertEqual(Data(referenceHasher.finalize()).hexString, oneMillionADigest)
         }
     }
     
-    
-    func test_short_input_tag() throws {
+    func testShortInput() throws {
         var hasher = Shaman256()
         
         let input = "short".data(using: .utf8)!
         
-        let tag = hasher.update(
-            data: input,
-            tag: "short"
+        let cachedState = hasher.updateAndCacheState(
+            data: input
         )
         
         hasher.update(data: " input".data(using: .utf8)!)
@@ -116,12 +116,13 @@ final class ShamanTests: XCTestCase {
         
         // Actual check
         var otherHasher = Shaman256()
-        otherHasher.restore(tag: tag)
+        otherHasher.restore(cachedState: cachedState)
         otherHasher.update(data: " input".data(using: .utf8)!)
         XCTAssertEqual(Data(otherHasher.finalize()).hexString, Data(Shaman256.hash(data: "short input".data(using: .utf8)!)).hexString)
     }
 }
-
+private let oneMillionADigest = "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0"
+private let bip340TagPrecomputedState = "46615b35f4bfbff79f8dc67183627ab3602171805735866121a29e5468b07b4c"
 private let bip340Tag = "BIP0340/nonce"
 private extension ShamanTests {
     

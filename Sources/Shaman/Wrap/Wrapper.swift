@@ -8,7 +8,14 @@
 import Foundation
 import BridgeToC
 
-internal final class Wrapper {
+// Optimally this would be a `struct` rather than a class. But in that case we
+// would need to mark `finalize` as `mutating` since we re-initialize the
+// `secp256k1_sha256` for reuse in finalize, which we want, because this allows
+// us to reuse this Wrapper's `secp256k1_sha256` and thus we can reuse the
+// instance of this class in `Shaman256`, which gives us the performance we want
+// in the typical use case of PoW. i.e. we not only offers the ability to restore
+// state, but even after finalization we can restore state.
+internal final class Wrapper: CacheableHasher {
     internal var hasher: secp256k1_sha256
 
     /// Initializes the hash function instance.
@@ -19,6 +26,9 @@ internal final class Wrapper {
 }
 
 internal extension Wrapper {
+    
+    typealias CachedState = Shaman256.CachedState
+   
     
     @inlinable
     func initHasher() {
@@ -31,17 +41,14 @@ internal extension Wrapper {
     }
     
     @inlinable
-    func update(
-        bufferPointer inputPointer: UnsafeRawBufferPointer,
-        tag: String
-    ) -> Shaman256.Tag {
-        update(bufferPointer: inputPointer)
-        return .init(cachedState: hasher, name: tag)
+    func updateAndCacheState(input: UnsafeRawBufferPointer, stateDescription: String?) -> CachedState {
+        update(bufferPointer: input)
+        return CachedState.init(cachedState: hasher, description: stateDescription)
     }
     
     @inlinable
-    func restore(tag: Shaman256.Tag) {
-        hasher = tag.cachedState
+    func restore(cachedState: CachedState) {
+        hasher = cachedState.wrappedHasher
     }
     
     /// Returns the digest from the data input in the hash function instance.
