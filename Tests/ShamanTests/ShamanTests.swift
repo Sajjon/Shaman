@@ -62,12 +62,12 @@ final class ShamanTests: XCTestCase {
     }
 
     func testAssertCachingStateDoesNotHaveSideEffectOnDigests() {
-        // https://www.di-mgt.com.au/sha_testvectors.html
-       
         var hasher = Shaman256()
         var lastState: Shaman256.CachedState?
         
+        /// https://www.di-mgt.com.au/sha_testvectors.html
         let input = String(repeating: "a", count: 1000).data(using: .utf8)!
+        
         for _ in 0..<1000 {
             let cachedState = hasher.updateAndCacheState(data: input)
             XCTAssertNotEqual(cachedState, lastState)
@@ -120,10 +120,33 @@ final class ShamanTests: XCTestCase {
         otherHasher.update(data: " input".data(using: .utf8)!)
         XCTAssertEqual(Data(otherHasher.finalize()).hexString, Data(Shaman256.hash(data: "short input".data(using: .utf8)!)).hexString)
     }
+    
+    func testFinalizeTo() {
+        var hasher = Shaman256()
+        
+        /// https://www.di-mgt.com.au/sha_testvectors.html
+        let input = String(repeating: "a", count: 1_000_000).data(using: .utf8)!
+        hasher.update(data: input)
+        
+        var digestData = Data(repeating: 0x00, count: 32)
+        
+        digestData.withUnsafeMutableBytes { targetPointer in
+            hasher.finalize(to: targetPointer)
+        }
+        
+        XCTAssertEqual(digestData.hexString, oneMillionADigest)
+    }
+    
 }
+
+/// https://www.di-mgt.com.au/sha_testvectors.html
 private let oneMillionADigest = "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0"
+
+/// https://github.com/bitcoin-core/secp256k1/blob/master/src/modules/schnorrsig/main_impl.h#L14-L28
 private let bip340TagPrecomputedState = "46615b35f4bfbff79f8dc67183627ab3602171805735866121a29e5468b07b4c"
+/// https://github.com/bitcoin-core/secp256k1/blob/master/src/modules/schnorrsig/main_impl.h#L14-L28///
 private let bip340Tag = "BIP0340/nonce"
+
 private extension ShamanTests {
     
     

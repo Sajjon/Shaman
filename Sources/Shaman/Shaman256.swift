@@ -5,7 +5,7 @@ import BridgeToC
 
 // MARK: - Shaman256
 // MARK: -
-public struct Shaman256: CacheableHasher & HashFunction {
+public struct Shaman256: CacheableHasher & HashFunction & HashFunctionWithSink & HashFunctionWithReinit {
     
     internal let wrapper: Wrapper
 
@@ -31,7 +31,6 @@ public extension Shaman256 {
     func finalize() -> Digest {
         wrapper.finalize()
     }
-    
 }
 
 // MARK: - CacheableHasher
@@ -45,6 +44,23 @@ public extension Shaman256 {
         wrapper.updateAndCacheState(input: input, stateDescription: stateDescription)
     }
 }
+
+// MARK: - HashFunctionWithSink
+// MARK: -
+public extension Shaman256 {
+    mutating func finalize(to bufferPointer: UnsafeMutableRawBufferPointer) {
+        wrapper.finalize(to: bufferPointer)
+    }
+}
+
+// MARK: - HashFunctionWithReinit
+// MARK: -
+public extension Shaman256 {
+    mutating func reinitialize() {
+        wrapper.reinitialize()
+    }
+}
+
 
 
 // MARK: - Tag Testing
