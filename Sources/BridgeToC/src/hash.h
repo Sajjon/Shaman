@@ -21,5 +21,6 @@ void secp256k1_sha256_write(secp256k1_sha256 *hash, const void *data, size_t siz
 void secp256k1_sha256_write_cache_state(secp256k1_sha256 *hash, const void *data, size_t size, void *state32out);
 void secp256k1_sha256_finalize(secp256k1_sha256 *hash, void *out32);
 void secp256k1_sha256_init_with_state(secp256k1_sha256 *sha, const void *data, size_t len);
+void secp256k1_copy_hasher_state(secp256k1_sha256 *target, secp256k1_sha256 *source);
 
 #endif /* SECP256K1_HASH_H */

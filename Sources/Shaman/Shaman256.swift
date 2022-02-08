@@ -37,8 +37,8 @@ public extension Shaman256 {
 // MARK: - CacheableHasher
 // MARK: -
 public extension Shaman256 {
-    mutating func restore(cachedState: CachedState) {
-        wrapper.restore(cachedState: cachedState)
+    mutating func restore(cachedState: inout CachedState) {
+        wrapper.restore(cachedState: &cachedState)
     }
     
     mutating func updateAndCacheState(input: UnsafeRawBufferPointer, stateDescription: String?) -> CachedState {
@@ -55,7 +55,7 @@ internal extension Shaman256 {
         state: Data,
         description: String? = nil
     ) throws {
-        let cachedState = try Shaman256.CachedState.init(stateData: state, description: description)
-        restore(cachedState: cachedState)
+        var cachedState = try Shaman256.CachedState.init(stateData: state, description: description)
+        restore(cachedState: &cachedState)
     }
 }

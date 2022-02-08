@@ -38,7 +38,7 @@ final class ShamanTests: XCTestCase {
         
         let stateDescription = "some important description we wanna assert against later"
         
-        let cachedState = hasher.updateAndCacheState(
+        var cachedState = hasher.updateAndCacheState(
             data: Data(half + half),
             stateDescription: stateDescription
         )
@@ -55,7 +55,7 @@ final class ShamanTests: XCTestCase {
         XCTAssertNotEqual(inspectStateOf(hasher: hasher).hexString, bip340TagPrecomputedState)
 
         // Restore
-        hasher.restore(cachedState: cachedState)
+        hasher.restore(cachedState: &cachedState)
         XCTAssertEqual(inspectStateOf(cachedState: cachedState).hexString, bip340TagPrecomputedState)
 
         XCTAssertEqual(hashBIP340Tag().hexString, Data(hasher.finalize()).hexString)
@@ -87,12 +87,12 @@ final class ShamanTests: XCTestCase {
             var hasherUnderTest = Shaman256()
             
             let initialInput = String(repeating: "a", count: length - bytesLeft).data(using: .utf8)!
-            let cachedMidState = referenceHasher.updateAndCacheState(data: initialInput)
+            var cachedMidState = referenceHasher.updateAndCacheState(data: initialInput)
             let remainingInput = String(repeating: "a", count: bytesLeft).data(using: .utf8)!
             
             XCTAssertEqual(initialInput.count + remainingInput.count, length)
             
-            hasherUnderTest.restore(cachedState: cachedMidState)
+            hasherUnderTest.restore(cachedState: &cachedMidState)
             hasherUnderTest.update(data: remainingInput)
             XCTAssertEqual(Data(hasherUnderTest.finalize()).hexString, oneMillionADigest)
             referenceHasher.update(data: remainingInput)
@@ -105,7 +105,7 @@ final class ShamanTests: XCTestCase {
         
         let input = "short".data(using: .utf8)!
         
-        let cachedState = hasher.updateAndCacheState(
+        var cachedState = hasher.updateAndCacheState(
             data: input
         )
         
@@ -116,7 +116,7 @@ final class ShamanTests: XCTestCase {
         
         // Actual check
         var otherHasher = Shaman256()
-        otherHasher.restore(cachedState: cachedState)
+        otherHasher.restore(cachedState: &cachedState)
         otherHasher.update(data: " input".data(using: .utf8)!)
         XCTAssertEqual(Data(otherHasher.finalize()).hexString, Data(Shaman256.hash(data: "short input".data(using: .utf8)!)).hexString)
     }

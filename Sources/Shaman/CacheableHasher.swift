@@ -12,7 +12,7 @@ public protocol CachedHasherState: Equatable & CustomStringConvertible {}
 public protocol CacheableHasher {
     associatedtype CachedState: CachedHasherState
     mutating func updateAndCacheState(input: UnsafeRawBufferPointer, stateDescription: String?) -> CachedState
-    mutating func restore(cachedState: CachedState)
+    mutating func restore(cachedState: inout CachedState)
 }
 
 // MARK: - CacheableHasher Convenience

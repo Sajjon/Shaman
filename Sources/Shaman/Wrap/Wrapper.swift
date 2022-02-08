@@ -47,8 +47,8 @@ internal extension Wrapper {
     }
     
     @inlinable
-    func restore(cachedState: CachedState) {
-        hasher = cachedState.wrappedHasher
+    func restore(cachedState: inout CachedState) {
+        secp256k1_copy_hasher_state(&hasher, &cachedState.wrappedHasher)
     }
     
     /// Returns the digest from the data input in the hash function instance.
